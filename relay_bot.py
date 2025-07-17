@@ -170,6 +170,7 @@ async def on_message(message):
             await message.channel.send("✅ 投稿を受け付けました。ありがとうございました。")
         else:
             await message.channel.send("⚠️ 投稿チャンネルが見つかりません。管理者に連絡してください。")
+import os
 
-# Bot起動
+TOKEN = os.getenv("TOKEN")  # ← Railwayの環境変数から取得する
 bot.run(TOKEN)
