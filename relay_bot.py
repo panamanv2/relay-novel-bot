@@ -14,7 +14,7 @@ print("DEBUG: TOKEN =", TOKEN)
 logging.basicConfig(level=logging.INFO)
 
 # コマンド実行許可チャンネルID
-ALLOWED_CHANNEL_ID = 1394002532640096438  # 実際の投稿用チャンネルIDに変更してください
+ALLOWED_CHANNEL_ID = 1393506261294911639  # 実際の投稿用チャンネルIDに変更してください
 
 # 投稿まとめ用チャンネルID
 ANONYMOUS_CHANNEL_ID = ALLOWED_CHANNEL_ID
