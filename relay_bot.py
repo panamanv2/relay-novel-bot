@@ -72,7 +72,7 @@ async def start(ctx):
     if relay_owner_id is not None:
         return await ctx.send(f"⚠️ BOTは既に <@{relay_owner_id}> さんによって起動されています。")
 
-    relay_owner_id = ctx.author.id
+    relay_owner_id = None
     await ctx.send(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
 
 # BOT停止コマンド（/end）
