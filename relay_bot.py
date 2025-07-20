@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 ALLOWED_CHANNEL_ID = int(os.getenv("ALLOWED_CHANNEL_ID", 0))
 ANONYMOUS_CHANNEL_IDS = list(map(int, os.getenv("ANONYMOUS_CHANNEL_IDS", "").split(",")))
 
