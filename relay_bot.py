@@ -1,20 +1,18 @@
 import os
-from dotenv import load_dotenv
 import discord
 from discord.ext import commands
 import time
 import logging
 
-# 環境変数読み込み
-load_dotenv()
-TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-print("DEBUG: TOKEN =", TOKEN)
+# トークン取得（.envを使わずRenderの環境変数から直接取得）
+TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+print("DEBUG: TOKEN =", TOKEN[:10])  # ← 確認用（先頭10文字だけ）
 
 # ログ設定
 logging.basicConfig(level=logging.INFO)
 
 # コマンド実行許可チャンネルID
-ALLOWED_CHANNEL_ID =1393506261294911639  # 実際の投稿用チャンネルIDに変更してください
+ALLOWED_CHANNEL_ID = 1393506261294911639  # 実際の投稿用チャンネルIDに変更してください
 
 # 投稿まとめ用チャンネルID
 ANONYMOUS_CHANNEL_ID = ALLOWED_CHANNEL_ID
@@ -92,9 +90,7 @@ async def end_bot(ctx):
         await ctx.send(f"🛑 {ctx.author.mention} さんがBOTを停止しました。")
         relay_owner_id = None
     else:
-        # 停止できないユーザーへの個別通知
         await ctx.send(f"🚫 {ctx.author.mention} さん、あなたにはBOTを停止する権限がありません。起動者は <@{relay_owner_id}> さんです。")
-        # チャンネル全員に見える警告メッセージ
         await ctx.channel.send(f"⚠️ ユーザー {ctx.author.mention} が停止権限なしに停止コマンドを実行しようとしました。")
 
 # メッセージ監視
@@ -103,23 +99,18 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # コマンド処理優先
     await bot.process_commands(message)
 
-    # 起動状態チェック
     if relay_owner_id is None:
         return
 
-    # チャンネル許可チェック（DM除く）
     if not (message.channel.id == ALLOWED_CHANNEL_ID or isinstance(message.channel, discord.Thread)):
         return
 
-    # 投稿内容
     content = message.content.strip()
     user_id = message.author.id
     now = time.time()
 
-    # 文字数制限
     if len(content) > MAX_LENGTH:
         try:
             await message.delete()
@@ -128,7 +119,6 @@ async def on_message(message):
             pass
         return
 
-    # 投稿間隔チェック
     thread_id = message.channel.id if not isinstance(message.channel, discord.DMChannel) else None
     key = (user_id, thread_id)
     last_time = last_post_time_by_user_and_thread.get(key, 0)
@@ -141,7 +131,6 @@ async def on_message(message):
             pass
         return
 
-    # 投稿受理して記録
     last_post_time_by_user_and_thread[key] = now
     if thread_id:
         relay_story_by_thread.setdefault(thread_id, []).append(content)
@@ -153,7 +142,6 @@ async def on_message(message):
 
     formatted_message = f"🖋 **名も無き作家より（#{post_number}）**：\n{content}"
 
-    # 投稿方法による処理
     if isinstance(message.channel, discord.Thread) or message.channel.id == ANONYMOUS_CHANNEL_ID:
         try:
             await message.delete()
@@ -163,7 +151,6 @@ async def on_message(message):
         except Exception as e:
             print(f"❌ エラー: {e}")
     else:
-        # DMなどの場合は指定チャンネルへ送信
         target_channel = bot.get_channel(ANONYMOUS_CHANNEL_ID)
         if target_channel:
             await target_channel.send(formatted_message)
