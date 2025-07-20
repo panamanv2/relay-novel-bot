@@ -45,53 +45,65 @@ async def on_ready():
 # ステータス表示（スレッドの物語）
 @bot.tree.command(name="status", description="このスレッドのリレー小説の進行状況を表示します")
 async def status(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)  # ← deferで先に応答
+
     thread_id = interaction.channel.id
     story_list = relay_story_by_thread.get(thread_id, [])
     story = "\n".join([f"#{i+1}: {line}" for i, line in enumerate(story_list)]) or "まだ物語は始まっていません。"
     if len(story) > 1800:
         story = story[-1800:]
-    await interaction.response.send_message(f"📚 このスレッドの物語:\n```\n{story}\n```", ephemeral=True)
+
+    await interaction.followup.send(f"📚 このスレッドの物語:\n```\n{story}\n```", ephemeral=True)
 
 # コマンド一覧表示
 @bot.tree.command(name="commands", description="Botの利用可能なコマンド一覧を表示します")
 async def commands_list(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)  # 応答猶予（3秒ルール回避）
+
     cmds = bot.tree.get_commands()
     description = "\n".join([f"/{cmd.name} : {cmd.description}" for cmd in cmds])
-    await interaction.response.send_message(f"📜 利用可能なコマンド一覧:\n{description}", ephemeral=True)
-
+    await interaction.followup.send(f"📜 利用可能なコマンド一覧:\n{description}", ephemeral=True)
+    
 # BOT起動コマンド（start_bot）
 @bot.tree.command(name="start", description="Botを起動します")
 async def start(interaction: discord.Interaction):
     global relay_owner_id
 
-    if ctx.channel.id != ALLOWED_CHANNEL_ID:
-        return await interaction.response.send_message("⚠️ このチャンネルではBOTを起動できません。")
+    if interaction.channel.id != ALLOWED_CHANNEL_ID:
+        await interaction.response.send_message("⚠️ このチャンネルではBOTを起動できません。", ephemeral=True)
+        return
 
     if relay_owner_id is not None:
-        return await interaction.response.send_message(f"⚠️ BOTは既に <@{relay_owner_id}> さんによって起動されています。")
+        await interaction.response.send_message(
+            f"⚠️ BOTは既に <@{relay_owner_id}> さんによって起動されています。", ephemeral=True
+        )
+        return
 
-    relay_owner_id = ctx.author.id
-    await interaction.response.send_message(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
+    relay_owner_id = interaction.user.id
+    await interaction.response.send_message(f"🚀 {interaction.user.mention} さんがBOTを起動しました！")
 
 # BOT停止コマンド（end_bot）
 @bot.tree.command(name="end", description="Botを終了します")
 async def end(interaction: discord.Interaction):
     global relay_owner_id
 
-    if ctx.channel.id != ALLOWED_CHANNEL_ID:
-        return await interaction.response.send_message("⚠️ このチャンネルではBOTを停止できません。")
+    if interaction.channel.id != ALLOWED_CHANNEL_ID:
+        await interaction.response.send_message("⚠️ このチャンネルではBOTを停止できません。", ephemeral=True)
+        return
 
-    user_id = ctx.author.id
+    user_id = interaction.user.id
 
     if relay_owner_id is None:
-        return await interaction.response.send_message("⚠️ BOTは現在起動していません。")
+        await interaction.response.send_message("⚠️ BOTは現在起動していません。", ephemeral=True)
+        return
 
     if user_id == relay_owner_id:
-        await interaction.response.send_message(f"🛑 {ctx.author.mention} さんがBOTを停止しました。")
+        await interaction.response.send_message(f"🛑 {interaction.user.mention} さんがBOTを停止しました。")
         relay_owner_id = None
     else:
-        await ctx.send(f"🚫 {ctx.author.mention} さん、あなたにはBOTを停止する権限がありません。起動者は <@{relay_owner_id}> さんです。")
-        await ctx.channel.send(f"⚠️ ユーザー {ctx.author.mention} が停止権限なしに停止コマンドを実行しようとしました。")
+        await interaction.response.send_message(
+            f"🚫 {interaction.user.mention} さん、あなたにはBOTを停止する権限がありません。起動者は <@{relay_owner_id}> さんです。",
+            ephemeral=True)
 
 # メッセージ監視
 @bot.event
