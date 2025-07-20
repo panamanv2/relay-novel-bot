@@ -1,77 +1,100 @@
 import os
 import discord
 from discord.ext import commands
+from discord import app_commands
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
-TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-ALLOWED_CHANNEL_ID = int(os.getenv("ALLOWED_CHANNEL_ID", 0))
-ANONYMOUS_CHANNEL_IDS = list(map(int, os.getenv("ANONYMOUS_CHANNEL_IDS", "").split(",")))
+TOKEN = os.getenv("TOKEN")
+ALLOWED_THREAD_IDS = list(map(int, os.getenv("ANONYMOUS_CHANNEL_IDS", "").split(",")))
+
+MAX_LENGTH = 100
+COOLDOWN_SECONDS = 300
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+intents.guilds = True
 
+bot = commands.Bot(command_prefix="!", intents=intents)
 relay_owner_id = None
 last_post_time = {}
-POST_INTERVAL = 300
-MAX_LENGTH = 100
+message_counter = 0
 
 @bot.event
 async def on_ready():
-    print(f"✅ Bot logged in as {bot.user}")
+    print(f"✅ Bot is ready: {bot.user}")
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ Synced {len(synced)} slash commands")
+    except Exception as e:
+        print("❌ Slash command sync failed:", e)
 
-@bot.command(name="start")
-async def start(ctx):
+# スラッシュコマンド：起動
+@bot.tree.command(name="start", description="Botを起動します")
+async def start(interaction: discord.Interaction):
     global relay_owner_id
-
-    if ctx.channel.id != ALLOWED_CHANNEL_ID:
-        return await ctx.send("⚠️ このチャンネルではBOTを起動できません。")
+    if interaction.channel_id not in ALLOWED_THREAD_IDS:
+        await interaction.response.send_message("⚠️ このスレッドではBotを起動できません。", ephemeral=True)
+        return
 
     if relay_owner_id is not None:
-        return await ctx.send(f"⚠️ BOTは既に <@{relay_owner_id}> さんによって起動されています。")
+        await interaction.response.send_message(f"⚠️ すでに <@{relay_owner_id}> さんが起動しています。", ephemeral=True)
+        return
 
-    relay_owner_id = ctx.author.id
-    await ctx.send(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
+    relay_owner_id = interaction.user.id
+    await interaction.response.send_message(f"🚀 {interaction.user.mention} さんがBotを起動しました！")
 
-@bot.command(name="end")
-async def end(ctx):
+# スラッシュコマンド：停止
+@bot.tree.command(name="end", description="Botを停止します")
+async def end(interaction: discord.Interaction):
     global relay_owner_id
+    if interaction.channel_id not in ALLOWED_THREAD_IDS:
+        await interaction.response.send_message("⚠️ このスレッドではBotを停止できません。", ephemeral=True)
+        return
 
-    if ctx.channel.id != ALLOWED_CHANNEL_ID:
-        return await ctx.send("⚠️ このチャンネルではBOTを停止できません。")
+    if relay_owner_id != interaction.user.id:
+        await interaction.response.send_message(f"🚫 あなたは起動者ではありません。起動者：<@{relay_owner_id}>", ephemeral=True)
+        return
 
-    if relay_owner_id is None:
-        return await ctx.send("⚠️ BOTは現在起動していません。")
+    relay_owner_id = None
+    await interaction.response.send_message(f"🛑 {interaction.user.mention} さんがBotを停止しました。")
 
-    if ctx.author.id == relay_owner_id:
-        relay_owner_id = None
-        await ctx.send(f"🛑 {ctx.author.mention} さんがBOTを停止させました。")
-    else:
-        await ctx.send(f"🚫 {ctx.author.mention} さんには停止権限がありません。起動者は <@{relay_owner_id}> さんです。")
-
+# 匿名投稿メッセージ受信
 @bot.event
 async def on_message(message):
-    if message.author.bot:
+    global message_counter
+
+    if message.author == bot.user or message.guild is None:
         return
 
-    if message.channel.id not in ANONYMOUS_CHANNEL_IDS:
+    if message.channel.id not in ALLOWED_THREAD_IDS:
         return
 
-    now = message.created_at.timestamp()
+    if relay_owner_id is None:
+        await message.channel.send("⚠️ Botが起動していません。")
+        return
+
     user_id = message.author.id
-    if user_id in last_post_time and now - last_post_time[user_id] < POST_INTERVAL:
-        return await message.channel.send(f"⚠️ 5分間隔での投稿が必要です。")
+    now = time.time()
+
+    if user_id in last_post_time and now - last_post_time[user_id] < COOLDOWN_SECONDS:
+        remaining = int(COOLDOWN_SECONDS - (now - last_post_time[user_id]))
+        await message.channel.send(f"⏳ あと {remaining} 秒後に投稿できます。")
+        return
 
     if len(message.content) > MAX_LENGTH:
-        return await message.channel.send(f"⚠️ 投稿は{MAX_LENGTH}文字以内にしてください。")
+        await message.channel.send(f"⚠️ 文字数は最大{MAX_LENGTH}文字です。")
+        return
 
     try:
         await message.delete()
-        await message.channel.send(f"📩 **名も無き作家**より：\n> {message.content}")
-        last_post_time[user_id] = now
-    except Exception as e:
-        print(f"❌ 投稿エラー: {e}")
+    except Exception:
+        pass
+
+    message_counter += 1
+    await message.channel.send(f"📝【No.{message_counter}】\n{message.content}")
+    last_post_time[user_id] = now
 
 bot.run(TOKEN)
