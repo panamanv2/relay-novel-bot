@@ -65,13 +65,13 @@ async def start(interaction: discord.Interaction):
     global relay_owner_id
 
     if ctx.channel.id != ALLOWED_CHANNEL_ID:
-        return await ctx.send("⚠️ このチャンネルではBOTを起動できません。")
+        return await interaction.response.send_message("⚠️ このチャンネルではBOTを起動できません。")
 
     if relay_owner_id is not None:
-        return await ctx.send(f"⚠️ BOTは既に <@{relay_owner_id}> さんによって起動されています。")
+        return await interaction.response.send_message(f"⚠️ BOTは既に <@{relay_owner_id}> さんによって起動されています。")
 
     relay_owner_id = ctx.author.id
-    await ctx.send(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
+    await interaction.response.send_message(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
 
 # BOT停止コマンド（end_bot）
 @bot.tree.command(name="end", description="Botを終了します")
@@ -79,15 +79,15 @@ async def end(interaction: discord.Interaction):
     global relay_owner_id
 
     if ctx.channel.id != ALLOWED_CHANNEL_ID:
-        return await ctx.send("⚠️ このチャンネルではBOTを停止できません。")
+        return await interaction.response.send_message("⚠️ このチャンネルではBOTを停止できません。")
 
     user_id = ctx.author.id
 
     if relay_owner_id is None:
-        return await ctx.send("⚠️ BOTは現在起動していません。")
+        return await interaction.response.send_message("⚠️ BOTは現在起動していません。")
 
     if user_id == relay_owner_id:
-        await ctx.send(f"🛑 {ctx.author.mention} さんがBOTを停止しました。")
+        await interaction.response.send_message(f"🛑 {ctx.author.mention} さんがBOTを停止しました。")
         relay_owner_id = None
     else:
         await ctx.send(f"🚫 {ctx.author.mention} さん、あなたにはBOTを停止する権限がありません。起動者は <@{relay_owner_id}> さんです。")
