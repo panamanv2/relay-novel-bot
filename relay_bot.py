@@ -60,8 +60,8 @@ async def commands_list(interaction: discord.Interaction):
     await interaction.response.send_message(f"📜 利用可能なコマンド一覧:\n{description}", ephemeral=True)
 
 # BOT起動コマンド（start_bot）
-@bot.tree.command(name="/start", description="Botを起動します")
-async def /start(ctx):
+@bot.tree.command(name="start", description="Botを起動します")
+async def start(interaction: discord.Interaction):
     global relay_owner_id
 
     if ctx.channel.id != ALLOWED_CHANNEL_ID:
@@ -74,8 +74,8 @@ async def /start(ctx):
     await ctx.send(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
 
 # BOT停止コマンド（end_bot）
-@bot.tree.command(name="/end", description="Botを終了します")
-async def /end(ctx):
+@bot.tree.command(name="end", description="Botを終了します")
+async def end(interaction: discord.Interaction):
     global relay_owner_id
 
     if ctx.channel.id != ALLOWED_CHANNEL_ID:
