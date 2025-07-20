@@ -60,7 +60,7 @@ async def commands_list(interaction: discord.Interaction):
     await interaction.response.send_message(f"📜 利用可能なコマンド一覧:\n{description}", ephemeral=True)
 
 # BOT起動コマンド（start_bot）
-@bot.command(name="/start")
+@bot.tree.command(name="/start")
 async def /start(ctx):
     global relay_owner_id
 
@@ -74,7 +74,7 @@ async def /start(ctx):
     await ctx.send(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
 
 # BOT停止コマンド（end_bot）
-@bot.command(name="/end")
+@bot.tree.command(name="/end")
 async def /end(ctx):
     global relay_owner_id
 
