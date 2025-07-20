@@ -26,7 +26,7 @@ intents.guilds = True
 intents.messages = True
 
 # Botインスタンス作成
-bot = commands.Bot(command_prefix='/', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 # リレー小説データなど管理用
 relay_story_by_thread = {}
