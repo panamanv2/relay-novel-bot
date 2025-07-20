@@ -61,9 +61,9 @@ async def commands_list(interaction: discord.Interaction):
     description = "\n".join([f"/{cmd.name} : {cmd.description}" for cmd in cmds])
     await interaction.response.send_message(f"📜 利用可能なコマンド一覧:\n{description}", ephemeral=True)
 
-# BOT起動コマンド（start_bot）
-@bot.command(name="start_bot")
-async def start_bot(ctx):
+# BOT起動コマンド（/start）
+@bot.command(name="start")
+async def start(ctx):
     global relay_owner_id
 
     if ctx.channel.id != ALLOWED_CHANNEL_ID:
@@ -75,9 +75,9 @@ async def start_bot(ctx):
     relay_owner_id = ctx.author.id
     await ctx.send(f"🚀 {ctx.author.mention} さんがBOTを起動しました！")
 
-# BOT停止コマンド（end_bot）
-@bot.command(name="end_bot")
-async def end_bot(ctx):
+# BOT停止コマンド（/end）
+@bot.command(name="end")
+async def end(ctx):
     global relay_owner_id
 
     if ctx.channel.id != ALLOWED_CHANNEL_ID:
@@ -89,12 +89,10 @@ async def end_bot(ctx):
         return await ctx.send("⚠️ BOTは現在起動していません。")
 
     if user_id == relay_owner_id:
-        await ctx.send(f"🛑 {ctx.author.mention} さんがBOTを停止させようとしました。")
+        await ctx.send(f"🛑 {ctx.author.mention} さんがBOTを停止させました。")
         relay_owner_id = None
     else:
-        # 停止できないユーザーへの個別通知
         await ctx.send(f"🚫 {ctx.author.mention} さん、あなたにはBOTを停止する権限がありません。起動者は <@{relay_owner_id}> さんです。")
-        # チャンネル全員に見える警告メッセージ
         await ctx.channel.send(f"⚠️ ユーザー {ctx.author.mention} が停止権限なしに停止コマンドを実行しようとしました。")
 
 # メッセージ監視
